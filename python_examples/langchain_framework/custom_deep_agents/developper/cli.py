@@ -34,3 +34,11 @@ async def run_application() -> None:
 				print()
 	except KeyboardInterrupt:
 		print("\nExiting...")
+
+
+def main() -> None:
+	asyncio.run(run_application())
+
+
+if __name__ == "__main__":
+	main()

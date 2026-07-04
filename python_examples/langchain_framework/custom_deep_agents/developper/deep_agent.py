@@ -7,11 +7,9 @@ from langgraph.store.memory import InMemoryStore
 
 try:
 	from .backend import create_backend
-	from .mcp_tools import load_playwright_tools
 	from .subagents import create_subagents
 except ImportError:
 	from backend import create_backend
-	from mcp_tools import load_playwright_tools
 	from subagents import create_subagents
 
 load_dotenv()
@@ -25,8 +23,7 @@ backend = create_backend()
 async def create_deep_agent_with_persistent_playwright_tools(
 	exit_stack: AsyncExitStack,
 ):
-	playwright_tools = await load_playwright_tools(exit_stack)
-	subagents = create_subagents(model=model, dev_tester_tools=playwright_tools)
+	subagents = await create_subagents(model=model, exit_stack=exit_stack)
 
 	return create_deep_agent(
 		model=model,
