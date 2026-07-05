@@ -7,9 +7,9 @@ from .code_writer import create_code_writer_subagent
 from .dev_tester import create_dev_tester_subagent
 
 
-async def create_subagents(model: str, exit_stack: AsyncExitStack) -> list[SubAgent]:
+async def create_subagents(exit_stack: AsyncExitStack) -> list[SubAgent]:
 	return [
-		create_code_writer_subagent(model),
-		create_code_reviewer_subagent(model),
-		await create_dev_tester_subagent(model, exit_stack),
+		create_code_writer_subagent(),
+		create_code_reviewer_subagent(),
+		await create_dev_tester_subagent(exit_stack),
 	]

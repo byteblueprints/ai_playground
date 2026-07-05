@@ -1,0 +1,15 @@
+- generic [ref=e2]:
+  - heading "Login" [level=2] [ref=e3]
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: Email
+      - textbox "Email" [ref=e7]:
+        - /placeholder: Enter your email
+        - text: testuser
+      - generic [ref=e8]: Enter a valid email.
+    - generic [ref=e9]:
+      - generic [ref=e10]: Password
+      - textbox "Password" [ref=e11]:
+        - /placeholder: Enter your password
+        - text: testpass
+    - button "Login" [active] [ref=e13] [cursor=pointer]

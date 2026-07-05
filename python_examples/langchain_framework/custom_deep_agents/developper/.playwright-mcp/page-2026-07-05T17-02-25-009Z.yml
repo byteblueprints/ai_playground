@@ -1,0 +1,18 @@
+- generic [active] [ref=e1]:
+  - heading "Piano Simulator" [level=1] [ref=e2]
+  - generic [ref=e3]:
+    - generic "C" [ref=e4] [cursor=pointer]
+    - generic "C#" [ref=e5] [cursor=pointer]
+    - generic "D" [ref=e6] [cursor=pointer]
+    - generic "D#" [ref=e7] [cursor=pointer]
+    - generic "E" [ref=e8] [cursor=pointer]
+    - generic "F" [ref=e9] [cursor=pointer]
+    - generic "F#" [ref=e10] [cursor=pointer]
+    - generic "G" [ref=e11] [cursor=pointer]
+    - generic "G#" [ref=e12] [cursor=pointer]
+    - generic "A" [ref=e13] [cursor=pointer]
+    - generic "A#" [ref=e14] [cursor=pointer]
+    - generic "B" [ref=e15] [cursor=pointer]
+  - generic [ref=e16]:
+    - button "Play Song" [ref=e17]
+    - button "Stop" [ref=e18]

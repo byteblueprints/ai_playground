@@ -1,4 +1,0 @@
-[   23858ms] SyntaxError: Failed to execute 'appendChild' on 'Node': Identifier 'display' has already been declared
-    at addScriptContent (eval at evaluate (:303:30), <anonymous>:7:25)
-    at UtilityScript.evaluate (<anonymous>:305:16)
-    at UtilityScript.<anonymous> (<anonymous>:1:44)

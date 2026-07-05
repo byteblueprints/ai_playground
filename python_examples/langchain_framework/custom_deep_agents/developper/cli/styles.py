@@ -1,0 +1,11 @@
+GREEN = "\033[32m"
+RED = "\033[31m"
+CYAN = "\033[36m"
+YELLOW = "\033[33m"
+BLUE = "\033[34m"
+DIM = "\033[2m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+
+SEP = f"{DIM}{'─' * 64}{RESET}"
+TURN_SEP = f"{DIM}{'═' * 64}{RESET}"
