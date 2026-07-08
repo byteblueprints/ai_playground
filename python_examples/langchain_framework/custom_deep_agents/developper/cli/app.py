@@ -10,7 +10,7 @@ if "WORKSPACE_ROOT" not in os.environ and "DEEP_AGENT_WORKSPACE_ROOT" not in os.
 
 from deep_agent import (
     create_agent_stream,
-    create_deep_agent_with_persistent_playwright_tools,
+    create_custom_deep_agent,
     save_assistant_response,
 )
 
@@ -25,7 +25,7 @@ async def run_application() -> None:
 
     try:
         async with AsyncExitStack() as exit_stack:
-            agent = await create_deep_agent_with_persistent_playwright_tools(exit_stack)
+            agent = await create_custom_deep_agent(exit_stack)
             while True:
                 user_input = (await asyncio.to_thread(input, f"{GREEN}You{RESET}: ")).strip()
                 if not user_input:
