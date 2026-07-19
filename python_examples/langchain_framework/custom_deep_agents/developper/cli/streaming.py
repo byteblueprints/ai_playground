@@ -46,6 +46,10 @@ async def display_agent_stream(
                 raw_chunks.append(str(delta))
             if raw_chunks:
                 print(f"{DIM}     output : {truncate(''.join(raw_chunks))}{RESET}")
+            else:
+                final_output = getattr(call, "output", None)
+                if final_output not in (None, ""):
+                    print(f"{DIM}     output : {truncate(format_value(final_output))}{RESET}")
 
             if getattr(call, "error", None):
                 print(f"     {RED}error  : {call.error}{RESET}")
@@ -66,6 +70,10 @@ async def display_agent_stream(
                     if raw_chunks:
                         preview = truncate("".join(raw_chunks))
                         print(f"{DIM}       output : {preview}{RESET}")
+                    else:
+                        final_output = getattr(call, "output", None)
+                        if final_output not in (None, ""):
+                            print(f"{DIM}       output : {truncate(format_value(final_output))}{RESET}")
 
                     if getattr(call, "error", None):
                         print(f"       {RED}error  : {call.error}{RESET}")

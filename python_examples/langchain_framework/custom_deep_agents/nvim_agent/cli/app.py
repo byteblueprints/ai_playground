@@ -4,20 +4,11 @@ import threading
 import time
 import uuid
 from contextlib import AsyncExitStack
-from pathlib import Path
 
-
-if "WORKSPACE_ROOT" not in os.environ and "DEEP_AGENT_WORKSPACE_ROOT" not in os.environ:
-    os.environ["WORKSPACE_ROOT"] = str((Path(__file__).resolve().parents[1] / "file_system_root").resolve())
-
-from deep_agent import (
-    create_agent_stream,
-    create_custom_deep_agent,
-    save_assistant_response,
-)
+from nvim_agent import APP_DESCRIPTION, create_agent_stream, create_nvim_agent, save_assistant_response
 
 from .streaming import display_agent_stream
-from .styles import GREEN, RESET
+from .styles import DIM, GREEN, RESET
 
 
 def _wait_for_ctrl_x_windows(stop_event: threading.Event) -> bool:
@@ -42,13 +33,14 @@ async def _watch_for_cancel_shortcut(stop_event: threading.Event) -> bool:
 
 async def run_application() -> None:
     thread_id = str(uuid.uuid4())
+    print(APP_DESCRIPTION)
     print(f"Session thread ID: {thread_id}")
     print("Chat started. Press Ctrl+C to exit.")
     print("Press Ctrl+X during a turn to cancel the current interaction.\n")
 
     try:
         async with AsyncExitStack() as exit_stack:
-            agent = await create_custom_deep_agent(exit_stack)
+            agent = await create_nvim_agent(exit_stack)
             while True:
                 user_input = (await asyncio.to_thread(input, f"{GREEN}You{RESET}: ")).strip()
                 if not user_input:
@@ -77,7 +69,7 @@ async def run_application() -> None:
                         await turn_task
                     except asyncio.CancelledError:
                         pass
-                    print("  interaction canceled (Ctrl+X)")
+                    print(f"{DIM}  interaction canceled (Ctrl+X){RESET}")
                 else:
                     await turn_task
 
