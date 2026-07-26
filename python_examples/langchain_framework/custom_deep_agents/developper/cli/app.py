@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 if "WORKSPACE_ROOT" not in os.environ and "DEEP_AGENT_WORKSPACE_ROOT" not in os.environ:
-    os.environ["WORKSPACE_ROOT"] = str((Path(__file__).resolve().parents[1] / "file_system_root").resolve())
+    os.environ["WORKSPACE_ROOT"] = str((Path(__file__).resolve().parents[1] / "file_system_root" / "workspace" / "home").resolve())
 
 from deep_agent import (
     create_agent_stream,

@@ -3,31 +3,27 @@ import asyncio
 
 from deepagents import create_deep_agent
 from deepagents.middleware.filesystem import FilesystemPermission
-from middlewares import CoordinatorToolFilterMiddleware
 from tools import load_nvim_tools, load_powershell_tools
 
 from subagents import create_subagents
 
 from deep_agent_runtime import BACKEND, DELETE_FILE_TOOL, EXECUTE_TOOL, MEMORY_STORE, MODEL
 
+SKILL_SOURCES = ["/skills/"]
+COORDINATOR_PERMISSIONS = [
+    FilesystemPermission(operations=["write"], paths=["/skills", "/skills/**"], mode="deny"),
+]
+
 
 COORDINATOR_SYSTEM_PROMPT = (
     "You are the main coordinator agent. "
-    "Delegation policy is strict: for coding, file changes, code review, and testing requests, call the task tool first and delegate to the best available specialist subagent. "
-    "Select subagents by their current descriptions and capabilities, not by hardcoded names, so the policy automatically applies to future subagents. "
+    "Delegate to specialist subagents when that improves quality or speed, and work directly when appropriate. "
     "When using the PowerShell MCP start_console tool, default to reason=null so existing standby consoles are reused. "
     "Provide a non-empty reason only when the user explicitly asks for a new/separate/additional PowerShell terminal or window. "
-    "Do not use direct coordinator implementation tools (such as write_file, edit_file, grep, or execute) for those requests unless delegation is not possible. "
-    "Direct work is allowed only when no available subagent can reasonably handle the task, or a delegation attempt fails because of missing capability. "
-    "If direct work is used after fallback, briefly explain why delegation was not possible. "
-    "File location policy: create source code files and other non-temporary files inside the workspace path; create memory files inside /memories; and create temporary files inside the default backend."
+    "File location policy: create all source-code and project files inside /workspace; create memory files only inside /memories; and keep skill files in /skills as read-only references. "
+    "Do not create, edit, or delete files under /skills unless the user explicitly asks to change skills. "
+    "Create temporary files inside the default backend."
 )
-
-COORDINATOR_PERMISSIONS = [
-    FilesystemPermission(operations=["write"], paths=["/**"], mode="deny"),
-]
-
-COORDINATOR_EXCLUDED_TOOLS = frozenset({"write_file", "edit_file"})
 
 async def create_custom_deep_agent(
     exit_stack: AsyncExitStack,
@@ -43,7 +39,7 @@ async def create_custom_deep_agent(
         model=MODEL,
         system_prompt=COORDINATOR_SYSTEM_PROMPT,
         backend=BACKEND,
-        middleware=[CoordinatorToolFilterMiddleware(excluded=COORDINATOR_EXCLUDED_TOOLS)],
+        skills=SKILL_SOURCES,
         permissions=COORDINATOR_PERMISSIONS,
         subagents=subagents,
         store=MEMORY_STORE,

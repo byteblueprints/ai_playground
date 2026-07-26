@@ -7,6 +7,7 @@ from .filesystem import CustomLocalShellBackend
 
 
 WORKSPACE_ROUTE = "/workspace/"
+SKILLS_ROUTE = "/skills/"
 MEMORIES_ROUTE = "/memories/"
 
 
@@ -15,8 +16,23 @@ def _resolve_workspace_root() -> Path:
 	if workspace_root:
 		return Path(workspace_root).expanduser().resolve()
 
-	# Default to the local file_system_root when no env var is provided.
-	return (Path(__file__).resolve().parent.parent / "file_system_root").resolve()
+	# Default to a dedicated home folder under local file_system_root/workspace.
+	return (Path(__file__).resolve().parent.parent / "file_system_root" / "workspace" / "home").resolve()
+
+
+def _resolve_skills_root(workspace_root: Path) -> Path:
+	skills_root = os.getenv("SKILLS_ROOT") or os.getenv("DEEP_AGENT_SKILLS_ROOT")
+	if skills_root:
+		return Path(skills_root).expanduser().resolve()
+
+	# Keep skills and workspace under the same file_system_root when possible.
+	if workspace_root.name.lower() == "home" and workspace_root.parent.name.lower() == "workspace":
+		return (workspace_root.parent.parent / "skills").resolve()
+
+	if workspace_root.name.lower() == "workspace":
+		return (workspace_root.parent / "skills").resolve()
+
+	return (workspace_root / "skills").resolve()
 
 
 def create_workspace_backend() -> CustomLocalShellBackend:
@@ -35,12 +51,25 @@ def create_workspace_backend() -> CustomLocalShellBackend:
 	)
 
 
+def create_skills_backend(workspace_root: Path) -> CustomLocalShellBackend:
+	skills_root = _resolve_skills_root(workspace_root)
+	skills_root.mkdir(parents=True, exist_ok=True)
+
+	return CustomLocalShellBackend(
+		root_dir=skills_root,
+		virtual_mode=True,
+		inherit_env=False,
+	)
+
+
 def create_backend_pair() -> tuple[CompositeBackend, CustomLocalShellBackend]:
 	workspace_backend = create_workspace_backend()
+	skills_backend = create_skills_backend(_resolve_workspace_root())
 	backend = CompositeBackend(
 		default=StateBackend(),
 		routes={
 			WORKSPACE_ROUTE: workspace_backend,
+			SKILLS_ROUTE: skills_backend,
 			MEMORIES_ROUTE: StoreBackend(namespace=lambda _rt: ("memories",)),
 		},
 	)
