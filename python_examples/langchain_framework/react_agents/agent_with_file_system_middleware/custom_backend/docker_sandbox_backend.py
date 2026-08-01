@@ -4,7 +4,7 @@ from deepagents.middleware import FilesystemMiddleware
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 
-from langchain_framework.langchain_agent_with_file_system_middleware.custom_backend.docker.docker_sandbox import (
+from python_examples.langchain_framework.react_agents.agent_with_file_system_middleware.custom_backend.docker.docker_sandbox import (
 	DockerSandboxBackend,
 )
 
