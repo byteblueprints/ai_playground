@@ -56,11 +56,16 @@ class TurnEventContext:
             self.reasoning_active = False
             self.reasoning_namespace = None
 
-    def finish(self) -> None:
+    def finish(self, *, paused: bool = False) -> None:
         if self.printed_header:
             self.end_reasoning()
             self.thinking.stop(final_message="")
             sys.stdout.write("\n")
             sys.stdout.flush()
+        elif paused:
+            # Nothing was rendered yet and we're pausing for HITL review -
+            # stay silent so the upcoming "Human review required" banner
+            # isn't preceded by a misleading "done".
+            self.thinking.stop(final_message="")
         else:
             self.thinking.stop(final_message="done")

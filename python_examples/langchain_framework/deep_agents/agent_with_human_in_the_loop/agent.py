@@ -10,9 +10,12 @@ from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
 from langchain_core._api import LangChainBetaWarning
 from langchain_core.language_models import BaseChatModel
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.store.memory import InMemoryStore
+from langgraph.types import Command
 
 from events.consume_turn_events import consume_turn_events
+from hitl import SENSITIVE_TOOL_INTERRUPTS, ask_user, get_pending_interrupt, prompt_for_decisions
 from utils.colors import ENTITY_COLORS, RESET, colorize
 
 
@@ -20,11 +23,15 @@ load_dotenv()
 warnings.filterwarnings("ignore", category=LangChainBetaWarning)
 
 # Set up the model spec and reasoning effort from environment variables, with defaults.
-model_spec = os.getenv("MODEL", "openai:gpt-5-mini")
-reasoning_effort = os.getenv("REASONING_EFFORT", "medium")
+model_spec = os.getenv("MODEL", "openai:gpt-5-nano")
+# Reasoning temporarily disabled (empty default) to keep HITL experimentation output short.
+reasoning_effort = os.getenv("REASONING_EFFORT", "")
 system_prompt = (
     "You are a helpful deep agent for local experimentation. "
-    "Use tools when useful and explain your reasoning clearly."
+    "Use tools when useful and explain your reasoning clearly. "
+    "You must never ask a clarifying question directly in your own reply. "
+    "Whenever you need any input or clarification from the human operator, "
+    "you must call the ask_user tool instead - do not end your turn with a question."
 )
 
 
@@ -40,11 +47,11 @@ def build_model(spec: str, reasoning_effort: str | None) -> str | BaseChatModel:
     )
 
 
-def create_stream(agent: Any, messages: list[dict[str, str]], thread_id: str):
+def create_stream(agent: Any, stream_input: Any, config: dict[str, Any]):
     return agent.stream_events(
-        {"messages": messages},
+        stream_input,
         version="v3",
-        config={"configurable": {"thread_id": thread_id}},
+        config=config,
     )
 
 
@@ -65,10 +72,25 @@ async def run_turn(agent: Any, memory_store: InMemoryStore, thread_id: str, user
     conversation_history = history_item.value if history_item else []
     conversation_history.append({"role": "user", "content": user_text})
 
-    stream = create_stream(agent, conversation_history, thread_id)
+    config = {"configurable": {"thread_id": thread_id}}
+    stream_input: Any = {"messages": conversation_history}
     coordinator_chunks: list[str] = []
 
-    consume_turn_events(stream, coordinator_chunks)
+    # Loop so a resumed turn (after a human decision) keeps streaming live,
+    # and can itself pause again if further sensitive tools are called.
+    while True:
+        stream = create_stream(agent, stream_input, config)
+        context = consume_turn_events(stream, coordinator_chunks)
+
+        state = await agent.aget_state(config)
+        pending_interrupt = get_pending_interrupt(state)
+        context.finish(paused=pending_interrupt is not None)
+        if pending_interrupt is None:
+            break
+
+        decisions = await asyncio.to_thread(prompt_for_decisions, pending_interrupt.value)
+        print(colorize("Resuming agent...\n", "neutral"))
+        stream_input = Command(resume={"decisions": decisions})
 
     save_assistant_response(memory_store, thread_id, conversation_history, coordinator_chunks)
 
@@ -81,6 +103,9 @@ async def run_chat() -> None:
     agent = create_deep_agent(
         model=build_model(model_spec, reasoning_effort),
         system_prompt=system_prompt,
+        tools=[ask_user],
+        interrupt_on=SENSITIVE_TOOL_INTERRUPTS,
+        checkpointer=MemorySaver(),  # required to pause and resume on interrupt
     )
     
     # Initialize an in-memory store for conversation history and generate a unique thread ID for the session.

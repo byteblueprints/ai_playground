@@ -6,8 +6,8 @@ from .tool_events import handle_tool_event
 from .turn_context import TurnEventContext
 
 
-def consume_turn_events(stream: Any, coordinator_chunks: list[str]) -> None:
-    """Consume the raw v3 event stream for a single turn.
+def consume_turn_events(stream: Any, coordinator_chunks: list[str]) -> TurnEventContext:
+    """Consume the raw v3 event stream for a single (possibly paused) segment.
 
     Renders the coordinator's own streamed text live, and clearly marks
     subagent invocations (start, live streamed text, and the final
@@ -18,6 +18,11 @@ def consume_turn_events(stream: Any, coordinator_chunks: list[str]) -> None:
     projections are only populated while they are the ones actively
     driving iteration - once the raw stream has been drained elsewhere
     they come back empty, so we don't rely on them.
+
+    Returns the context without finishing it: the stream can end either
+    because the turn is truly done or because it paused on an interrupt,
+    and only the caller knows which (via the graph state) - so it decides
+    when/how to call `context.finish(paused=...)`.
     """
     context = TurnEventContext(coordinator_chunks)
     context.start()
@@ -39,4 +44,4 @@ def consume_turn_events(stream: Any, coordinator_chunks: list[str]) -> None:
         elif method == "messages" and isinstance(data, (list, tuple)):
             handle_message_event(data, namespace_key, context)
 
-    context.finish()
+    return context
